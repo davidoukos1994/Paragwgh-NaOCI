@@ -6,10 +6,16 @@ const defaultTanks = [
   {id:'D3', code:'D-07-06', maxM:6.20, m:0.18, tnm:11.63, order:3},
   {id:'D1', code:'D-07-04', maxM:6.20, m:0.00, tnm:11.63, order:4},
 ];
-let state = load() || {production:6824, startTime:toLocalInput(new Date()), tanks:defaultTanks};
+let state = load() || {production:'6824', startTime:toLocalInput(new Date()), tanks:defaultTanks};
 
 function qs(id){return document.getElementById(id)}
-function num(v){ if(v === '' || v === null || v === undefined) return 0; return Number(String(v).replace(',', '.')) || 0; }
+function num(v){
+  if(v === '' || v === null || v === undefined) return 0;
+  const clean = String(v).trim().replace(/\s/g,'').replace(',', '.');
+  if(clean === '' || clean === '.' || clean === ',') return 0;
+  const n = Number(clean);
+  return Number.isFinite(n) ? n : 0;
+}
 function fmt(n,d=2){ return Number(n).toLocaleString('el-GR',{minimumFractionDigits:d,maximumFractionDigits:d}); }
 function toLocalInput(date){ const z=new Date(date.getTime()-date.getTimezoneOffset()*60000); return z.toISOString().slice(0,16); }
 function dateFmt(date){ return date.toLocaleString('el-GR',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
@@ -23,12 +29,13 @@ function tankCalc(t){
   const curT = Math.max(0, curM * num(t.tnm));
   const missT = Math.max(0, maxT - curT);
   const pct = maxT > 0 ? Math.min(100, (curT/maxT)*100) : 0;
-  const hours = state.production > 0 ? missT / (state.production/1000) : 0;
+  const prod = num(state.production);
+  const hours = prod > 0 ? missT / (prod/1000) : 0;
   return {maxT, curM, curT, missT, pct, hours};
 }
 
 function render(){
-  qs('production').value = state.production;
+  qs('production').value = state.production ?? '';
   qs('startTime').value = state.startTime;
   const root = qs('tanks'); root.innerHTML='';
   state.tanks.forEach((t,i)=>{
@@ -43,9 +50,9 @@ function render(){
           <div class="tank-text"><div>${t.id}</div><div>${fmt(c.curT,1)} tn</div><div>${fmt(c.curM,2)} m</div></div>
         </div>
         <div class="fields">
-          <label>Max m<input data-i="${i}" data-k="maxM" type="text" inputmode="decimal" value="${t.maxM}"></label>
-          <label>Πραγματικά m<input data-i="${i}" data-k="m" type="text" inputmode="decimal" value="${t.m}"></label>
-          <label>tn / m<input data-i="${i}" data-k="tnm" type="text" inputmode="decimal" value="${t.tnm}"></label>
+          <label>Max m<input data-i="${i}" data-k="maxM" type="text" inputmode="text" value="${t.maxM}"></label>
+          <label>Πραγματικά m<input data-i="${i}" data-k="m" type="text" inputmode="text" value="${t.m}"></label>
+          <label>tn / m<input data-i="${i}" data-k="tnm" type="text" inputmode="text" value="${t.tnm}"></label>
           <label>Σειρά<input data-i="${i}" data-k="order" type="text" inputmode="numeric" value="${t.order}"></label>
           <div class="small-btns"><button class="maxbtn" data-max="${i}" type="button">MAX</button><button class="emptybtn" data-empty="${i}" type="button">EMPTY</button></div>
           <div class="results">
@@ -66,6 +73,7 @@ function attachEvents(){
   document.querySelectorAll('input[data-i]').forEach(inp=>{
     inp.addEventListener('input', e=>{
       const i=Number(e.target.dataset.i), k=e.target.dataset.k;
+      // Κρατάμε το κείμενο όπως το γράφεις (π.χ. 6,54) και το μετατρέπουμε μόνο για τους υπολογισμούς.
       state.tanks[i][k] = e.target.value;
       save(); updateSchedule();
     });
@@ -75,7 +83,7 @@ function attachEvents(){
   document.querySelectorAll('[data-empty]').forEach(btn=>btn.onclick=()=>{ const i=Number(btn.dataset.empty); state.tanks[i].m=0; save(); render(); });
 }
 function updateSchedule(){
-  const prod=num(qs('production').value); state.production=prod;
+  const prod=num(qs('production').value); state.production=qs('production').value;
   state.startTime=qs('startTime').value || toLocalInput(new Date());
   const start = new Date(state.startTime);
   const calcs = state.tanks.map(t=>({...t, calc:tankCalc(t)}));
@@ -104,6 +112,6 @@ qs('production').addEventListener('input', e=>{ state.production=e.target.value;
 qs('startTime').addEventListener('input', updateSchedule);
 qs('nowBtn').onclick=()=>{state.startTime=toLocalInput(new Date()); save(); render();};
 qs('saveBtn').onclick=()=>{save(); alert('Αποθηκεύτηκε στη συσκευή.');};
-qs('resetBtn').onclick=()=>{ if(confirm('Να γίνει reset στα αρχικά δεδομένα;')){localStorage.removeItem('hypo-v4'); state={production:6824,startTime:toLocalInput(new Date()),tanks:defaultTanks}; render(); }};
+qs('resetBtn').onclick=()=>{ if(confirm('Να γίνει reset στα αρχικά δεδομένα;')){localStorage.removeItem('hypo-v4'); state={production:'6824',startTime:toLocalInput(new Date()),tanks:structuredClone(defaultTanks)}; render(); }};
 if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{})); }
 render();
