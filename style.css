@@ -1,0 +1,170 @@
+:root {
+  --purple: #6b007a;
+  --green: #0c8f38;
+  --red: #c82124;
+  --bg: #f3f3f5;
+  --card: #ffffff;
+  --ink: #111111;
+  --muted: #666666;
+  --line: #505050;
+  --input: #fff3a6;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+.app {
+  max-width: 1250px;
+  margin: 0 auto;
+  padding: 18px;
+}
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+h1 {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(28px, 5vw, 48px);
+  letter-spacing: 1px;
+}
+.topbar p { margin: 6px 0 0; color: var(--muted); font-weight: 700; }
+.controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+  background: var(--card);
+  border: 3px solid var(--purple);
+  padding: 14px;
+}
+label { font-weight: 700; font-size: 14px; }
+input, select {
+  width: 100%;
+  margin-top: 6px;
+  padding: 11px;
+  font-size: 17px;
+  border: 2px solid #888;
+  border-radius: 8px;
+  background: var(--input);
+}
+button {
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.ghost { background: #222; color: white; }
+.summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.summary-card {
+  background: var(--card);
+  border-left: 8px solid var(--purple);
+  padding: 12px;
+  min-height: 78px;
+  box-shadow: 0 1px 6px rgba(0,0,0,.08);
+}
+.summary-card b { display: block; font-size: 14px; color: var(--muted); margin-bottom: 6px; }
+.summary-card span { font-size: 22px; font-weight: 900; }
+.pipe { display: flex; align-items: center; gap: 12px; margin: 10px 0 12px; }
+.pipe span {
+  border: 2px solid #333;
+  background: white;
+  padding: 10px 14px;
+  font-weight: 900;
+  clip-path: polygon(0 0, 85% 0, 100% 50%, 85% 100%, 0 100%);
+  min-width: 160px;
+}
+.pipe-line { height: 7px; background: var(--purple); flex: 1; }
+.tank-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 14px;
+  border: 7px solid var(--line);
+  padding: 22px 14px;
+  background: #fafafa;
+}
+.tank-card {
+  position: relative;
+  background: var(--card);
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tank-card.active { border: 4px solid var(--green); box-shadow: 0 0 0 4px rgba(12,143,56,.16); }
+.valve { height: 44px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.valve-icon {
+  width: 26px;
+  height: 26px;
+  background: var(--red);
+  clip-path: polygon(0 0, 48% 50%, 0 100%, 100% 100%, 52% 50%, 100% 0);
+  border: 2px solid #111;
+}
+.active .valve-icon { background: var(--green); }
+.valve-line { width: 5px; height: 26px; background: var(--purple); }
+.tank-visual {
+  height: 210px;
+  border: 4px solid #333;
+  border-top: 2px solid #777;
+  border-radius: 50% / 8% 8% 4% 4%;
+  overflow: hidden;
+  background: linear-gradient(90deg, #eee 0%, #fff 45%, #e9e9e9 100%);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.fill {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  background: rgba(107,0,122,.74);
+  transition: height .25s;
+}
+.tank-text { position: relative; z-index: 2; text-shadow: 0 1px 2px white; }
+.tank-text .name { font-size: 30px; font-weight: 900; }
+.tank-text .tag { font-size: 12px; margin: 4px 0 10px; }
+.tank-text .tn { font-size: 18px; font-weight: 900; }
+.tank-text .m { margin-top: 8px; font-size: 15px; font-weight: 900; color: #0035d8; background: rgba(255,255,255,.85); padding: 3px; }
+.fields { display: grid; gap: 7px; }
+.fields label { font-size: 12px; }
+.fields input { font-size: 15px; padding: 8px; }
+.result {
+  background: #f4eef6;
+  border: 1px solid #c7a4ce;
+  border-radius: 8px;
+  padding: 9px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.result strong { font-size: 16px; }
+.help { margin: 18px 0; background: white; padding: 14px; border: 2px solid #ddd; }
+.help h2 { margin-top: 0; }
+
+@media (max-width: 1050px) {
+  .tank-grid { grid-template-columns: repeat(3, 1fr); }
+  .summary { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 680px) {
+  .app { padding: 10px; }
+  .controls { grid-template-columns: 1fr; }
+  .tank-grid { grid-template-columns: 1fr; border-width: 4px; }
+  .summary { grid-template-columns: 1fr; }
+  .tank-visual { height: 180px; }
+  .topbar { align-items: flex-start; }
+}
