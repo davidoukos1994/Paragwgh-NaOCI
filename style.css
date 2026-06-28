@@ -168,3 +168,7 @@ button {
   .tank-visual { height: 180px; }
   .topbar { align-items: flex-start; }
 }
+.summary-card.important {
+  border-left-color: var(--green);
+  background: #effaf2;
+}
