@@ -1,14 +1,26 @@
-# Hypochlorite Storage Calculator v3
+# NaOCl Storage v4
 
-Απλή εφαρμογή για GitHub Pages.
+Εφαρμογή για GitHub Pages.
 
-## Νέα λειτουργία
-- Βάζεις kg/hr παραγωγής.
-- Βάζεις για κάθε δεξαμενή: tn/m, Max m, Πραγματικά m.
-- Βάζεις σειρά γεμίσματος 1, 2, 3... στις δεξαμενές που θα γεμίσουν.
-- Υπολογίζει πότε γεμίζει κάθε δεξαμενή ξεχωριστά.
-- Υπολογίζει πότε γεμίζουν όλες μαζί διαδοχικά.
-- Κουμπί MAX / Γεμάτη σε κάθε δεξαμενή.
+## Ανέβασμα στο GitHub
+Ανέβασε όλα τα αρχεία στη ρίζα του repository:
 
-## GitHub Pages
-Ανέβασε τα αρχεία στο repository και ενεργοποίησε Settings → Pages → Deploy from branch → main → root.
+- index.html
+- style.css
+- app.js
+- manifest.json
+- sw.js
+- README.md
+
+Μετά: Settings → Pages → Deploy from branch → main → / root.
+
+## Τι κάνει
+- Παραγωγή kg/hr
+- Πραγματικά m, Max m, tn/m για κάθε δεξαμενή
+- Σειρά γεμίσματος 1,2,3...
+- Χρόνο γεμίσματος ανά δεξαμενή
+- Σύνολο τόνων τώρα
+- Πότε γεμίζουν όλες
+- Κουμπί MAX και EMPTY
+- Αποθήκευση στη συσκευή με localStorage
+- PWA / installable από κινητό

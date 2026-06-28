@@ -1,243 +1,110 @@
-const DEFAULT_TANKS = [
-  { id: 'Z2', tag: 'D-07-02', kv: 'KV7007', maxM: '7.50', tnPerM: '13.54', currentM: '7.50', order: '' },
-  { id: 'Z1', tag: 'D-07-01', kv: 'KV7006', maxM: '8.65', tnPerM: '11.63', currentM: '8.65', order: '' },
-  { id: 'Z3', tag: 'D-07-03', kv: 'KV7008', maxM: '7.50', tnPerM: '13.54', currentM: '0.86', order: '3' },
-  { id: 'D2', tag: 'D-07-05', kv: 'KV7002', maxM: '6.20', tnPerM: '11.63', currentM: '0.98', order: '2' },
-  { id: 'D3', tag: 'D-07-06', kv: 'KV7003', maxM: '6.20', tnPerM: '11.63', currentM: '6.20', order: '' },
-  { id: 'D1', tag: 'D-07-04', kv: 'KV7001', maxM: '6.20', tnPerM: '11.63', currentM: '0.98', order: '1' },
+const defaultTanks = [
+  {id:'Z2', code:'D-07-02', maxM:7.50, m:7.50, tnm:13.54, order:''},
+  {id:'Z1', code:'D-07-01', maxM:8.65, m:8.10, tnm:11.63, order:''},
+  {id:'Z3', code:'D-07-03', maxM:7.50, m:0.86, tnm:13.54, order:1},
+  {id:'D2', code:'D-07-05', maxM:6.20, m:4.12, tnm:11.63, order:2},
+  {id:'D3', code:'D-07-06', maxM:6.20, m:0.18, tnm:11.63, order:3},
+  {id:'D1', code:'D-07-04', maxM:6.20, m:0.00, tnm:11.63, order:4},
 ];
+let state = load() || {production:6824, startTime:toLocalInput(new Date()), tanks:defaultTanks};
 
-const STORAGE_KEY = 'hypochlorite-storage-v4-sequence';
-const els = {
-  production: document.getElementById('production'),
-  startTime: document.getElementById('startTime'),
-  activeTank: document.getElementById('activeTank'),
-  tankGrid: document.getElementById('tankGrid'),
-  summary: document.getElementById('summary'),
-  sequenceTable: document.getElementById('sequenceTable'),
-  resetBtn: document.getElementById('resetBtn'),
-};
+function qs(id){return document.getElementById(id)}
+function num(v){ if(v === '' || v === null || v === undefined) return 0; return Number(String(v).replace(',', '.')) || 0; }
+function fmt(n,d=2){ return Number(n).toLocaleString('el-GR',{minimumFractionDigits:d,maximumFractionDigits:d}); }
+function toLocalInput(date){ const z=new Date(date.getTime()-date.getTimezoneOffset()*60000); return z.toISOString().slice(0,16); }
+function dateFmt(date){ return date.toLocaleString('el-GR',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+function dur(hours){ if(!isFinite(hours)||hours<=0) return '0ω 00λ'; const h=Math.floor(hours); const m=Math.round((hours-h)*60); return `${h}ω ${String(m).padStart(2,'0')}λ`; }
+function save(){ localStorage.setItem('hypo-v4', JSON.stringify(state)); }
+function load(){ try{return JSON.parse(localStorage.getItem('hypo-v4'));}catch(e){return null;} }
 
-let state = loadState();
-
-function nowLocalInputValue() {
-  const d = new Date();
-  d.setSeconds(0, 0);
-  const pad = n => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+function tankCalc(t){
+  const maxT = Math.max(0, num(t.maxM) * num(t.tnm));
+  const curM = Math.min(Math.max(0,num(t.m)), Math.max(0,num(t.maxM)));
+  const curT = Math.max(0, curM * num(t.tnm));
+  const missT = Math.max(0, maxT - curT);
+  const pct = maxT > 0 ? Math.min(100, (curT/maxT)*100) : 0;
+  const hours = state.production > 0 ? missT / (state.production/1000) : 0;
+  return {maxT, curM, curT, missT, pct, hours};
 }
 
-function loadState() {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      parsed.tanks = parsed.tanks.map((t, i) => ({...DEFAULT_TANKS[i], ...t}));
-      return parsed;
-    } catch (_) {}
-  }
-  return { production: '6824', startTime: nowLocalInputValue(), activeTank: 'D1', tanks: DEFAULT_TANKS.map(t => ({...t})) };
-}
-
-function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-
-function toNumber(value) {
-  const text = String(value ?? '').replace(',', '.').trim();
-  if (text === '' || text === '.' || text === ',') return 0;
-  const num = Number(text);
-  return Number.isFinite(num) ? num : 0;
-}
-
-function fmt(num, digits = 2) {
-  if (!Number.isFinite(num)) return '-';
-  return num.toLocaleString('el-GR', { maximumFractionDigits: digits, minimumFractionDigits: digits });
-}
-
-function fmtHours(hours) {
-  if (!Number.isFinite(hours)) return '-';
-  const totalMinutes = Math.max(0, Math.round(hours * 60));
-  const days = Math.floor(totalMinutes / 1440);
-  const h = Math.floor((totalMinutes % 1440) / 60);
-  const m = totalMinutes % 60;
-  if (days > 0) return `${days} μέρες ${h} ώρες ${m} λεπτά`;
-  return `${h} ώρες ${m} λεπτά`;
-}
-
-function fmtDate(date) {
-  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '-';
-  return date.toLocaleString('el-GR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
-
-function tankCalc(t) {
-  const maxM = Math.max(0, toNumber(t.maxM));
-  const currentM = Math.max(0, toNumber(t.currentM));
-  const tnPerM = Math.max(0, toNumber(t.tnPerM));
-  const maxTn = maxM * tnPerM;
-  const currentTn = currentM * tnPerM;
-  const currentForRemaining = Math.min(currentM, maxM) * tnPerM;
-  const remainingTn = Math.max(0, maxTn - currentForRemaining);
-  const productionTnHr = toNumber(state.production) / 1000;
-  const hours = productionTnHr > 0 ? remainingTn / productionTnHr : NaN;
-  const start = new Date(state.startTime);
-  const finish = Number.isFinite(hours) ? new Date(start.getTime() + hours * 3600 * 1000) : null;
-  const percent = maxTn > 0 ? Math.min(100, Math.max(0, currentTn / maxTn * 100)) : 0;
-  const order = Number.parseInt(String(t.order || '').trim(), 10);
-  return { maxM, currentM, tnPerM, maxTn, currentTn, remainingTn, hours, finish, percent, order: Number.isFinite(order) ? order : null };
-}
-
-function sequenceCalcs(calcs) {
-  const start = new Date(state.startTime);
-  let elapsed = 0;
-  const selected = state.tanks
-    .map((tank, idx) => ({ tank, idx, calc: calcs[idx] }))
-    .filter(x => x.calc.remainingTn > 0 && x.calc.order !== null && x.calc.order > 0)
-    .sort((a, b) => a.calc.order - b.calc.order || a.idx - b.idx);
-
-  return selected.map(item => {
-    const startAt = new Date(start.getTime() + elapsed * 3600 * 1000);
-    elapsed += Number.isFinite(item.calc.hours) ? item.calc.hours : 0;
-    const finishAt = new Date(start.getTime() + elapsed * 3600 * 1000);
-    return { ...item, startAt, finishAt, elapsed };
-  });
-}
-
-function buildStaticUI() {
-  els.production.value = state.production;
-  els.startTime.value = state.startTime || nowLocalInputValue();
-  els.activeTank.innerHTML = state.tanks.map(t => `<option value="${t.id}">${t.id}</option>`).join('');
-  els.activeTank.value = state.activeTank;
-
-  els.summary.innerHTML = `
-    <div class="summary-card"><b>Παραγωγή</b><span data-summary="production"></span></div>
-    <div class="summary-card"><b>Σύνολο τώρα</b><span data-summary="totalCurrent"></span></div>
-    <div class="summary-card"><b>Συνολικό max</b><span data-summary="totalMax"></span></div>
-    <div class="summary-card"><b>Λείπουν συνολικά</b><span data-summary="totalRemaining"></span></div>
-    <div class="summary-card"><b>Γεμίζει τώρα</b><span data-summary="active"></span></div>
-    <div class="summary-card"><b>Χρόνος για αυτή</b><span data-summary="activeHours"></span></div>
-    <div class="summary-card"><b>Αυτή γεμίζει στις</b><span data-summary="activeFinish"></span></div>
-    <div class="summary-card important"><b>Με τη σειρά: όλες γεμίζουν στις</b><span data-summary="seqFinish"></span></div>
-  `;
-
-  els.tankGrid.innerHTML = state.tanks.map((t, idx) => `
-    <article class="tank-card" data-card="${idx}">
-      <div class="valve"><div class="valve-icon"></div><small>${t.kv}</small><div class="valve-line"></div></div>
-      <div class="tank-visual">
-        <div class="fill" data-fill="${idx}"></div>
-        <div class="tank-text">
-          <div class="name">${t.id}</div>
-          <div class="tag">${t.tag}</div>
-          <div class="tn"><span data-out="${idx}:currentTn"></span><br>tn NaOCl</div>
-          <div class="m"><span data-out="${idx}:currentM"></span> m</div>
+function render(){
+  qs('production').value = state.production;
+  qs('startTime').value = state.startTime;
+  const root = qs('tanks'); root.innerHTML='';
+  state.tanks.forEach((t,i)=>{
+    const c=tankCalc(t);
+    const card=document.createElement('article'); card.className='tank-card';
+    card.innerHTML=`
+      <div class="tank-title"><span>${t.id}</span><span>${t.code}</span></div>
+      <div class="tank-layout">
+        <div class="tank-visual">
+          ${Array.from({length:9},(_,k)=>`<div class="mark" style="bottom:${(k+1)*10}%"></div>`).join('')}
+          <div class="fill" style="height:${c.pct}%"></div>
+          <div class="tank-text"><div>${t.id}</div><div>${fmt(c.curT,1)} tn</div><div>${fmt(c.curM,2)} m</div></div>
         </div>
-      </div>
-      <div class="fields">
-        <label>Σειρά γεμίσματος <input data-idx="${idx}" data-field="order" type="text" inputmode="numeric" autocomplete="off" value="${t.order || ''}" placeholder="π.χ. 1"></label>
-        <label>Max m <input data-idx="${idx}" data-field="maxM" type="text" inputmode="decimal" autocomplete="off" value="${t.maxM}"></label>
-        <label>Πραγματικά m τώρα <input data-idx="${idx}" data-field="currentM" type="text" inputmode="decimal" autocomplete="off" value="${t.currentM}"></label>
-        <button class="max-btn" type="button" data-max="${idx}">MAX / Γεμάτη</button>
-        <label>tn / m <input data-idx="${idx}" data-field="tnPerM" type="text" inputmode="decimal" autocomplete="off" value="${t.tnPerM}"></label>
-      </div>
-      <div class="result">
-        Max: <strong data-out="${idx}:maxTn"></strong><br>
-        Λείπουν: <strong data-out="${idx}:remainingTn"></strong><br>
-        Αν γεμίσει μόνη της: <strong data-out="${idx}:hours"></strong><br>
-        Μόνη της γεμίζει: <strong data-out="${idx}:finish"></strong><br>
-        Με τη σειρά γεμίζει: <strong data-out="${idx}:seqFinish"></strong>
-      </div>
-    </article>
-  `).join('');
-
-  els.production.addEventListener('input', e => { state.production = e.target.value; updateCalculations(); });
-  els.startTime.addEventListener('input', e => { state.startTime = e.target.value; updateCalculations(); });
-  els.activeTank.addEventListener('change', e => { state.activeTank = e.target.value; updateCalculations(); });
-  els.tankGrid.addEventListener('input', e => {
-    const input = e.target.closest('[data-field]');
-    if (!input) return;
-    state.tanks[Number(input.dataset.idx)][input.dataset.field] = input.value;
-    updateCalculations();
+        <div class="fields">
+          <label>Max m<input data-i="${i}" data-k="maxM" type="number" step="0.01" inputmode="decimal" value="${t.maxM}"></label>
+          <label>Πραγματικά m<input data-i="${i}" data-k="m" type="number" step="0.01" inputmode="decimal" value="${t.m}"></label>
+          <label>tn / m<input data-i="${i}" data-k="tnm" type="number" step="0.01" inputmode="decimal" value="${t.tnm}"></label>
+          <label>Σειρά<input data-i="${i}" data-k="order" type="number" step="1" inputmode="numeric" value="${t.order}"></label>
+          <div class="small-btns"><button class="maxbtn" data-max="${i}" type="button">MAX</button><button class="emptybtn" data-empty="${i}" type="button">EMPTY</button></div>
+          <div class="results">
+            Τώρα: <b>${fmt(c.curT,2)} tn</b><br>
+            Λείπουν: <b>${fmt(c.missT,2)} tn</b><br>
+            Χρόνος μόνη της: <b>${dur(c.hours)}</b><br>
+            Πλήρωση: <b>${fmt(c.pct,1)}%</b>
+          </div>
+        </div>
+      </div>`;
+    root.appendChild(card);
   });
-  els.tankGrid.addEventListener('click', e => {
-    const btn = e.target.closest('[data-max]');
-    if (!btn) return;
-    const i = Number(btn.dataset.max);
-    state.tanks[i].currentM = state.tanks[i].maxM;
-    state.tanks[i].order = '';
-    const cm = els.tankGrid.querySelector(`input[data-idx="${i}"][data-field="currentM"]`);
-    const ord = els.tankGrid.querySelector(`input[data-idx="${i}"][data-field="order"]`);
-    if (cm) cm.value = state.tanks[i].currentM;
-    if (ord) ord.value = '';
-    updateCalculations();
-  });
-  els.resetBtn.addEventListener('click', () => {
-    if (confirm('Να γίνει reset στις αρχικές τιμές;')) {
-      localStorage.removeItem(STORAGE_KEY);
-      state = loadState();
-      buildStaticUI();
-    }
-  });
-  updateCalculations();
+  attachEvents();
+  updateSchedule();
 }
 
-function setText(selector, value) {
-  const el = document.querySelector(selector);
-  if (el) el.textContent = value;
+function attachEvents(){
+  document.querySelectorAll('input[data-i]').forEach(inp=>{
+    inp.addEventListener('input', e=>{
+      const i=Number(e.target.dataset.i), k=e.target.dataset.k;
+      state.tanks[i][k] = k==='order' ? e.target.value : e.target.value;
+      save(); updateSchedule(); updateCardVisual(i);
+    });
+  });
+  document.querySelectorAll('[data-max]').forEach(btn=>btn.onclick=()=>{ const i=Number(btn.dataset.max); state.tanks[i].m=state.tanks[i].maxM; save(); render(); });
+  document.querySelectorAll('[data-empty]').forEach(btn=>btn.onclick=()=>{ const i=Number(btn.dataset.empty); state.tanks[i].m=0; save(); render(); });
 }
+function updateCardVisual(i){ render(); }
 
-function updateCalculations() {
-  saveState();
-  const active = state.tanks.find(t => t.id === state.activeTank) || state.tanks[0];
-  const ac = tankCalc(active);
-  const calcs = state.tanks.map(tankCalc);
-  const seq = sequenceCalcs(calcs);
-  const seqFinish = seq.length ? seq[seq.length - 1].finishAt : new Date(state.startTime);
-  const seqHours = seq.length ? seq[seq.length - 1].elapsed : 0;
-  const seqFinishByIndex = Object.fromEntries(seq.map(x => [x.idx, x]));
-
-  const totalCurrent = calcs.reduce((sum, c) => sum + c.currentTn, 0);
-  const totalMax = calcs.reduce((sum, c) => sum + c.maxTn, 0);
-  const totalRemaining = calcs.reduce((sum, c) => sum + c.remainingTn, 0);
-
-  setText('[data-summary="production"]', `${fmt(toNumber(state.production), 0)} kg/hr`);
-  setText('[data-summary="active"]', active.id);
-  setText('[data-summary="activeHours"]', fmtHours(ac.hours));
-  setText('[data-summary="activeFinish"]', fmtDate(ac.finish));
-  setText('[data-summary="totalCurrent"]', `${fmt(totalCurrent)} tn`);
-  setText('[data-summary="totalMax"]', `${fmt(totalMax)} tn`);
-  setText('[data-summary="totalRemaining"]', `${fmt(totalRemaining)} tn`);
-  setText('[data-summary="seqFinish"]', seq.length ? `${fmtDate(seqFinish)} (${fmtHours(seqHours)})` : 'Δεν έχεις βάλει σειρά σε άδεια δεξαμενή');
-
-  if (els.sequenceTable) {
-    els.sequenceTable.innerHTML = seq.length ? `
-      <h2>Σειρά γεμίσματος</h2>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Σειρά</th><th>Δεξαμενή</th><th>Λείπουν tn</th><th>Χρόνος</th><th>Ξεκινάει</th><th>Γεμίζει</th></tr></thead>
-        <tbody>${seq.map(x => `<tr><td>${x.calc.order}</td><td>${x.tank.id}</td><td>${fmt(x.calc.remainingTn)}</td><td>${fmtHours(x.calc.hours)}</td><td>${fmtDate(x.startAt)}</td><td><b>${fmtDate(x.finishAt)}</b></td></tr>`).join('')}</tbody>
-      </table></div>
-    ` : `<h2>Σειρά γεμίσματος</h2><p>Βάλε 1, 2, 3... στο πεδίο <b>Σειρά γεμίσματος</b> στις άδειες δεξαμενές.</p>`;
+function updateSchedule(){
+  const prod=num(qs('production').value); state.production=prod;
+  state.startTime=qs('startTime').value || toLocalInput(new Date());
+  const start = new Date(state.startTime);
+  const calcs = state.tanks.map(t=>({...t, calc:tankCalc(t)}));
+  const totalNow = calcs.reduce((s,t)=>s+t.calc.curT,0);
+  const totalMax = calcs.reduce((s,t)=>s+t.calc.maxT,0);
+  const totalMissing = calcs.reduce((s,t)=>s+t.calc.missT,0);
+  qs('totalNow').textContent = `${fmt(totalNow,2)} tn`;
+  qs('totalMax').textContent = `${fmt(totalMax,2)} tn`;
+  qs('totalMissing').textContent = `${fmt(totalMissing,2)} tn`;
+  const ordered = calcs.filter(t=>num(t.order)>0 && t.calc.missT>0.0001).sort((a,b)=>num(a.order)-num(b.order));
+  let elapsed=0; let rows=[];
+  for(const t of ordered){
+    const h = prod>0 ? t.calc.missT/(prod/1000) : 0;
+    const end = new Date(start.getTime() + (elapsed+h)*3600000);
+    rows.push({id:t.id, order:num(t.order), miss:t.calc.missT, h, end});
+    elapsed += h;
   }
-
-  state.tanks.forEach((t, idx) => {
-    const c = calcs[idx];
-    const card = document.querySelector(`[data-card="${idx}"]`);
-    if (card) {
-      card.classList.toggle('active', t.id === state.activeTank);
-      card.classList.toggle('full', c.remainingTn === 0 && c.maxTn > 0);
-    }
-    const fill = document.querySelector(`[data-fill="${idx}"]`);
-    if (fill) fill.style.height = `${c.percent}%`;
-    setText(`[data-out="${idx}:currentTn"]`, fmt(c.currentTn, 1));
-    setText(`[data-out="${idx}:currentM"]`, fmt(c.currentM, 2));
-    setText(`[data-out="${idx}:maxTn"]`, `${fmt(c.maxTn)} tn`);
-    setText(`[data-out="${idx}:remainingTn"]`, `${fmt(c.remainingTn)} tn`);
-    setText(`[data-out="${idx}:hours"]`, fmtHours(c.hours));
-    setText(`[data-out="${idx}:finish"]`, fmtDate(c.finish));
-    const seqItem = seqFinishByIndex[idx];
-    let seqText = '-';
-    if (c.remainingTn === 0 && c.maxTn > 0) seqText = 'Γεμάτη';
-    else if (seqItem) seqText = fmtDate(seqItem.finishAt);
-    else if (c.remainingTn > 0) seqText = 'Βάλε σειρά';
-    setText(`[data-out="${idx}:seqFinish"]`, seqText);
-  });
+  qs('allFullTime').textContent = rows.length ? `${dateFmt(rows[rows.length-1].end)} (${dur(elapsed)})` : 'Όλα γεμάτα / χωρίς σειρά';
+  const sch=qs('schedule');
+  sch.innerHTML = '<div class="schedule-row"><span>Σειρά</span><span>Δεξαμενή</span><span>Λείπουν</span><span>Γεμίζει στις</span></div>' +
+    (rows.length ? rows.map(r=>`<div class="schedule-row"><span class="badge">${r.order}</span><span>${r.id} — ${dur(r.h)}</span><span>${fmt(r.miss,2)} tn</span><span>${dateFmt(r.end)}</span></div>`).join('') : '<p>Βάλε σειρά γεμίσματος στις άδειες δεξαμενές.</p>');
+  save();
 }
 
-buildStaticUI();
+qs('production').addEventListener('input', updateSchedule);
+qs('startTime').addEventListener('input', updateSchedule);
+qs('nowBtn').onclick=()=>{state.startTime=toLocalInput(new Date()); save(); render();};
+qs('saveBtn').onclick=()=>{save(); alert('Αποθηκεύτηκε στη συσκευή.');};
+qs('resetBtn').onclick=()=>{ if(confirm('Να γίνει reset στα αρχικά δεδομένα;')){localStorage.removeItem('hypo-v4'); state={production:6824,startTime:toLocalInput(new Date()),tanks:defaultTanks}; render(); }};
+if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{})); }
+render();
