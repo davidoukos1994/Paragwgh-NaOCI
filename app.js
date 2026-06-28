@@ -43,10 +43,10 @@ function render(){
           <div class="tank-text"><div>${t.id}</div><div>${fmt(c.curT,1)} tn</div><div>${fmt(c.curM,2)} m</div></div>
         </div>
         <div class="fields">
-          <label>Max m<input data-i="${i}" data-k="maxM" type="number" step="0.01" inputmode="decimal" value="${t.maxM}"></label>
-          <label>Πραγματικά m<input data-i="${i}" data-k="m" type="number" step="0.01" inputmode="decimal" value="${t.m}"></label>
-          <label>tn / m<input data-i="${i}" data-k="tnm" type="number" step="0.01" inputmode="decimal" value="${t.tnm}"></label>
-          <label>Σειρά<input data-i="${i}" data-k="order" type="number" step="1" inputmode="numeric" value="${t.order}"></label>
+          <label>Max m<input data-i="${i}" data-k="maxM" type="text" inputmode="decimal" value="${t.maxM}"></label>
+          <label>Πραγματικά m<input data-i="${i}" data-k="m" type="text" inputmode="decimal" value="${t.m}"></label>
+          <label>tn / m<input data-i="${i}" data-k="tnm" type="text" inputmode="decimal" value="${t.tnm}"></label>
+          <label>Σειρά<input data-i="${i}" data-k="order" type="text" inputmode="numeric" value="${t.order}"></label>
           <div class="small-btns"><button class="maxbtn" data-max="${i}" type="button">MAX</button><button class="emptybtn" data-empty="${i}" type="button">EMPTY</button></div>
           <div class="results">
             Τώρα: <b>${fmt(c.curT,2)} tn</b><br>
@@ -66,15 +66,14 @@ function attachEvents(){
   document.querySelectorAll('input[data-i]').forEach(inp=>{
     inp.addEventListener('input', e=>{
       const i=Number(e.target.dataset.i), k=e.target.dataset.k;
-      state.tanks[i][k] = k==='order' ? e.target.value : e.target.value;
-      save(); updateSchedule(); updateCardVisual(i);
+      state.tanks[i][k] = e.target.value;
+      save(); updateSchedule();
     });
+    inp.addEventListener('blur', ()=>render());
   });
   document.querySelectorAll('[data-max]').forEach(btn=>btn.onclick=()=>{ const i=Number(btn.dataset.max); state.tanks[i].m=state.tanks[i].maxM; save(); render(); });
   document.querySelectorAll('[data-empty]').forEach(btn=>btn.onclick=()=>{ const i=Number(btn.dataset.empty); state.tanks[i].m=0; save(); render(); });
 }
-function updateCardVisual(i){ render(); }
-
 function updateSchedule(){
   const prod=num(qs('production').value); state.production=prod;
   state.startTime=qs('startTime').value || toLocalInput(new Date());
@@ -101,7 +100,7 @@ function updateSchedule(){
   save();
 }
 
-qs('production').addEventListener('input', updateSchedule);
+qs('production').addEventListener('input', e=>{ state.production=e.target.value; updateSchedule(); });
 qs('startTime').addEventListener('input', updateSchedule);
 qs('nowBtn').onclick=()=>{state.startTime=toLocalInput(new Date()); save(); render();};
 qs('saveBtn').onclick=()=>{save(); alert('Αποθηκεύτηκε στη συσκευή.');};
