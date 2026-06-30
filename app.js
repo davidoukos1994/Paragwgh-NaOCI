@@ -6,7 +6,8 @@ const defaultTanks = [
   {id:'D3', code:'D-07-06', maxM:6.20, m:0.18, tnm:11.63, order:3},
   {id:'D1', code:'D-07-04', maxM:6.20, m:0.00, tnm:11.63, order:4},
 ];
-let state = load() || {production:'6824', startTime:toLocalInput(new Date()), tanks:defaultTanks};
+const STORAGE_KEY = 'hypo-v6-total-fixed';
+let state = load() || {production:'6824', startTime:toLocalInput(new Date()), tanks:structuredClone(defaultTanks)};
 
 function qs(id){return document.getElementById(id)}
 function num(v){
@@ -20,12 +21,12 @@ function fmt(n,d=2){ return Number(n).toLocaleString('el-GR',{minimumFractionDig
 function toLocalInput(date){ const z=new Date(date.getTime()-date.getTimezoneOffset()*60000); return z.toISOString().slice(0,16); }
 function dateFmt(date){ return date.toLocaleString('el-GR',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
 function dur(hours){ if(!isFinite(hours)||hours<=0) return '0ω 00λ'; const h=Math.floor(hours); const m=Math.round((hours-h)*60); return `${h}ω ${String(m).padStart(2,'0')}λ`; }
-function save(){ localStorage.setItem('hypo-v4', JSON.stringify(state)); }
-function load(){ try{return JSON.parse(localStorage.getItem('hypo-v4'));}catch(e){return null;} }
+function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function load(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY));}catch(e){return null;} }
 
 function tankCalc(t){
   const maxT = Math.max(0, num(t.maxM) * num(t.tnm));
-  const curM = Math.min(Math.max(0,num(t.m)), Math.max(0,num(t.maxM)));
+  const curM = Math.max(0,num(t.m));
   const curT = Math.max(0, curM * num(t.tnm));
   const missT = Math.max(0, maxT - curT);
   const pct = maxT > 0 ? Math.min(100, (curT/maxT)*100) : 0;
@@ -88,11 +89,9 @@ function updateSchedule(){
   const start = new Date(state.startTime);
   const calcs = state.tanks.map(t=>({...t, calc:tankCalc(t)}));
   const totalNow = calcs.reduce((s,t)=>s+t.calc.curT,0);
-  const totalMax = calcs.reduce((s,t)=>s+t.calc.maxT,0);
-  const totalMissing = calcs.reduce((s,t)=>s+t.calc.missT,0);
   qs('totalNow').textContent = `${fmt(totalNow,2)} tn`;
-  qs('totalMax').textContent = `${fmt(totalMax,2)} tn`;
-  qs('totalMissing').textContent = `${fmt(totalMissing,2)} tn`;
+  const bd = qs('totalBreakdown');
+  if (bd) bd.innerHTML = calcs.map(t=>`<div><span>${t.id}</span>${fmt(t.calc.curT,2)} tn</div>`).join('');
   const ordered = calcs.filter(t=>num(t.order)>0 && t.calc.missT>0.0001).sort((a,b)=>num(a.order)-num(b.order));
   let elapsed=0; let rows=[];
   for(const t of ordered){
@@ -112,6 +111,6 @@ qs('production').addEventListener('input', e=>{ state.production=e.target.value;
 qs('startTime').addEventListener('input', updateSchedule);
 qs('nowBtn').onclick=()=>{state.startTime=toLocalInput(new Date()); save(); render();};
 qs('saveBtn').onclick=()=>{save(); alert('Αποθηκεύτηκε στη συσκευή.');};
-qs('resetBtn').onclick=()=>{ if(confirm('Να γίνει reset στα αρχικά δεδομένα;')){localStorage.removeItem('hypo-v4'); state={production:'6824',startTime:toLocalInput(new Date()),tanks:structuredClone(defaultTanks)}; render(); }};
+qs('resetBtn').onclick=()=>{ if(confirm('Να γίνει reset στα αρχικά δεδομένα;')){localStorage.removeItem(STORAGE_KEY); state={production:'6824',startTime:toLocalInput(new Date()),tanks:structuredClone(defaultTanks)}; render(); }};
 if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{})); }
 render();

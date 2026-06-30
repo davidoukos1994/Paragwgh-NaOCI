@@ -14,7 +14,7 @@ label{display:flex;flex-direction:column;font-size:13px;font-weight:700;gap:5px}
 input,select,button{font-size:16px;border:1px solid #aaa;border-radius:9px;padding:9px;background:white;color:var(--text);min-height:42px}
 input{background:var(--input)}
 button{background:var(--purple);color:white;border:0;font-weight:800} button.secondary{background:#ddd;color:#222}
-.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;background:#2b003f;color:white}
+.summary{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;background:#2b003f;color:white}
 .summary div{border:1px solid #ffffff33;border-radius:10px;padding:10px;background:#ffffff10}.summary span{display:block;font-size:12px;color:#e7d8ef}.summary strong{display:block;margin-top:5px;font-size:17px}
 .legend{font-weight:700;color:#4a1855}
 .tank-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
@@ -28,3 +28,9 @@ button{background:var(--purple);color:white;border:0;font-weight:800} button.sec
 .results{grid-column:1/-1;background:#f7f7f7;border-radius:8px;padding:8px;font-size:13px;line-height:1.45}.results b{color:var(--purple)}
 .schedule-row{display:grid;grid-template-columns:70px 1fr 1fr 1fr;gap:8px;padding:8px;border-bottom:1px solid var(--line);align-items:center}.schedule-row:first-child{font-weight:900;background:#f5e8f8;border-radius:8px}.badge{background:var(--purple);color:white;border-radius:999px;padding:4px 8px;font-weight:900;text-align:center}
 @media(max-width:850px){.tank-grid{grid-template-columns:1fr}.summary{grid-template-columns:1fr 1fr}.top-panel{grid-template-columns:1fr}.tank-layout{grid-template-columns:95px 1fr}.tank-visual{height:190px;width:88px}.schedule-row{grid-template-columns:55px 1fr;gap:5px}.schedule-row span:nth-child(3),.schedule-row span:nth-child(4){grid-column:2}.schedule-row:first-child{display:none}}
+
+.compact h2{margin:0 0 8px;font-size:16px;color:var(--purple)}
+.breakdown{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.breakdown div{background:#f7f7f7;border:1px solid var(--line);border-radius:8px;padding:8px;text-align:center;font-weight:800}
+.breakdown span{display:block;color:var(--muted);font-size:12px;font-weight:700}
+@media(max-width:850px){.breakdown{grid-template-columns:repeat(2,1fr)}.summary{grid-template-columns:1fr}}

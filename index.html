@@ -4,6 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#2b003f" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="NaOCl Tanks" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="style.css" />
   <title>NaOCl Storage</title>
@@ -27,11 +32,14 @@
       <button id="resetBtn" type="button">Reset</button>
     </section>
 
-    <section class="summary">
-      <div><span>Σύνολο τώρα</span><strong id="totalNow">-</strong></div>
-      <div><span>Χωρητικότητα στόχου</span><strong id="totalMax">-</strong></div>
-      <div><span>Λείπουν</span><strong id="totalMissing">-</strong></div>
-      <div><span>Γεμίζουν όλες</span><strong id="allFullTime">-</strong></div>
+    <section class="summary two">
+      <div><span>Σύνολο ποσότητας δεξαμενών</span><strong id="totalNow">-</strong></div>
+      <div><span>Πότε γεμίζουν όλες στη σειρά</span><strong id="allFullTime">-</strong></div>
+    </section>
+
+    <section class="panel compact">
+      <h2>Άθροισμα ανά δεξαμενή</h2>
+      <div id="totalBreakdown" class="breakdown"></div>
     </section>
 
     <section class="legend">
@@ -46,6 +54,6 @@
     </section>
   </main>
 
-  <script src="app.js?v=comma-fix-2"></script>
+  <script src="app.js?v=v7-total-sum-1"></script>
 </body>
 </html>
